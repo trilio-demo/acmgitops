@@ -5,3 +5,6 @@ values/**/trilio-license-configmap.yaml
 *kubeconfig*
 *openrc*
 *.enc
+
+# internal project context (local only)
+CLAUDE.md
