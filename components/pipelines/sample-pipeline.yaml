@@ -10,7 +10,7 @@ spec:
   params:
     - name: repo-url
       type: string
-      default: __REPO_URL__
+      default: https://github.com/trilio-demo/acmgitops.git
     - name: revision
       type: string
       default: main

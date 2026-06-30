@@ -12,7 +12,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: __REPO_URL__
+    repoURL: https://github.com/trilio-demo/acmgitops.git
     targetRevision: main
     path: apps
     directory: { recurse: true }
