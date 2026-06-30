@@ -6,6 +6,11 @@ kind: Pipeline
 metadata:
   name: acmgitops-validate
   namespace: openshift-pipelines
+  annotations:
+    # Tekton Pipeline CRD is installed by the operator Subscription (wave 0);
+    # run this CR in a later wave and skip the dry-run until the CRD exists.
+    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   params:
     - name: repo-url
