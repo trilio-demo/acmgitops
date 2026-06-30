@@ -1,0 +1,24 @@
+# The ONE manifest you apply after the GitOps operator is Succeeded.
+# It renders every child Application under apps/, in sync-wave order:
+#   pipelines (10) -> ACM operator + MultiClusterHub (20) -> Trilio/T4K policies (30).
+# Replace __REPO_URL__ first (see README).
+#   oc apply -f bootstrap/app-of-apps.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: acmgitops-bootstrap
+  namespace: openshift-gitops
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: __REPO_URL__
+    targetRevision: main
+    path: apps
+    directory: { recurse: true }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-gitops
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=false]

@@ -1,0 +1,17 @@
+# The openshift-gitops Argo instance must be able to create Subscriptions,
+# OperatorGroups, MultiClusterHub and ACM Policies cluster-wide. The default
+# project SA is namespace-scoped, so we grant the application-controller
+# cluster-admin.  NOTE: cluster-admin is broad — scope this down with a custom
+# ClusterRole in hardened environments.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: openshift-gitops-argocd-application-controller-cluster-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: openshift-gitops-argocd-application-controller
+    namespace: openshift-gitops

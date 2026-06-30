@@ -1,0 +1,11 @@
+# dc11 example values for the label-driven backup policy. Apply on the ACM hub (default ns).
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: trilio-backup-configmap
+  namespace: default
+data:
+  nfsExport: '172.22.5.250:/export/sa-lab-nfs-share1'   # SHARED lab NFS — do not wipe
+  thresholdCapacity: 300Gi
+  backupSchedule: '0 1 * * 0'
+  retainLatest: '3'

@@ -1,0 +1,7 @@
+# never commit real license, real values, or cluster creds
+**/trilio-license-configmap.yaml
+components/t4k/configmaps/trilio-backup-configmap.yaml
+values/**/trilio-license-configmap.yaml
+*kubeconfig*
+*openrc*
+*.enc

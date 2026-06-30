@@ -1,0 +1,33 @@
+# Placement for the install-trilio Policy.
+# Selects managed clusters labelled protected-by=trilio AND vendor=OpenShift.
+# In the source lab this resolves to: dc4, ocp-dc2, ocp-dev.
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: install-trilio-placement
+  namespace: default
+spec:
+  clusterSelector:
+    matchExpressions:
+      - key: protected-by
+        operator: In
+        values:
+          - trilio
+      - key: vendor
+        operator: In
+        values:
+          - OpenShift
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: install-trilio-placement
+  namespace: default
+placementRef:
+  name: install-trilio-placement
+  apiGroup: apps.open-cluster-management.io
+  kind: PlacementRule
+subjects:
+  - name: install-trilio
+    apiGroup: policy.open-cluster-management.io
+    kind: Policy

@@ -1,0 +1,39 @@
+# SAMPLE Tekton Pipeline (illustrative, safe — no cluster mutation).
+# Clones this repo and validates the manifests with kubeconform. Use it as the
+# starting point for CI: lint -> dry-run apply -> trigger a T4K Backup, etc.
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: acmgitops-validate
+  namespace: openshift-pipelines
+spec:
+  params:
+    - name: repo-url
+      type: string
+      default: __REPO_URL__
+    - name: revision
+      type: string
+      default: main
+  workspaces:
+    - name: source
+  tasks:
+    - name: fetch
+      taskRef: { name: git-clone, kind: ClusterTask }
+      params:
+        - { name: url, value: $(params.repo-url) }
+        - { name: revision, value: $(params.revision) }
+      workspaces:
+        - { name: output, workspace: source }
+    - name: validate
+      runAfter: [fetch]
+      workspaces:
+        - { name: source, workspace: source }
+      taskSpec:
+        workspaces: [{ name: source }]
+        steps:
+          - name: kubeconform
+            image: ghcr.io/yannh/kubeconform:latest-alpine
+            script: |
+              #!/bin/sh
+              kubeconform -strict -ignore-missing-schemas \
+                -summary $(workspaces.source.path)/components

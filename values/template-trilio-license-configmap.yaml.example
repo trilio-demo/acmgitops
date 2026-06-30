@@ -1,0 +1,13 @@
+# Hub-side ConfigMap supplying the Trilio license key to the install-trilio Policy
+# (referenced as {{hub fromConfigMap "" "trilio-license" "key" hub}}).
+#
+# The license key is sensitive — DO NOT commit the real value. Copy this file to
+# trilio-license-configmap.yaml (gitignored), drop in the real key, and apply to
+# the ACM hub in the default namespace.
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: trilio-license
+  namespace: default
+data:
+  key: 'REPLACE_WITH_TRILIO_LICENSE_KEY'

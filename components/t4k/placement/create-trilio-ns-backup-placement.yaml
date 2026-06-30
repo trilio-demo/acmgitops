@@ -1,0 +1,32 @@
+# Placement for the create-trilio-ns-backup Policy.
+# Same selector as install: protected-by=trilio AND vendor=OpenShift.
+apiVersion: apps.open-cluster-management.io/v1
+kind: PlacementRule
+metadata:
+  name: create-trilio-ns-backup-placement
+  namespace: default
+spec:
+  clusterSelector:
+    matchExpressions:
+      - key: protected-by
+        operator: In
+        values:
+          - trilio
+      - key: vendor
+        operator: In
+        values:
+          - OpenShift
+---
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: create-trilio-ns-backup-placement
+  namespace: default
+placementRef:
+  name: create-trilio-ns-backup-placement
+  apiGroup: apps.open-cluster-management.io
+  kind: PlacementRule
+subjects:
+  - name: create-trilio-ns-backup
+    apiGroup: policy.open-cluster-management.io
+    kind: Policy

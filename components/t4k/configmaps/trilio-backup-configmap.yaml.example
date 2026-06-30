@@ -1,0 +1,14 @@
+# HUB-side values for the label-driven create-trilio-ns-backup Policy.
+# Apply to the ACM hub in the "default" namespace. Namespaces are selected by the
+# label  trilio-backup=true  on each managed cluster (NOT named here):
+#   oc label namespace <ns> trilio-backup=true
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: trilio-backup-configmap
+  namespace: default
+data:
+  nfsExport: 'REPLACE_ME_HOST:/export/path'   # e.g. 172.22.5.250:/export/sa-lab-nfs-share1
+  thresholdCapacity: 300Gi
+  backupSchedule: '0 1 * * 0'                 # cron; weekly, Sunday 01:00
+  retainLatest: '3'                           # keep last N backups per BackupPlan

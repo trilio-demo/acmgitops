@@ -1,0 +1,104 @@
+# Label-driven, multi-namespace T4K backup governance.
+#
+# For every managed cluster matched by the placement, this Policy discovers each
+# Namespace labelled  trilio-backup=true  and, IN THAT NAMESPACE, enforces:
+#   - a NFS Target          (where backups land)
+#   - a Retention Policy    (keep latest N)
+#   - a Schedule Policy      (cron)
+#   - a BackupPlan           (wires target + retention + schedule)
+#
+# It creates NO standalone Backup objects: T4K's scheduler fires backups on the cron
+# and T4K's retention controller prunes to N. ACM only guarantees the config CRs exist,
+# so it never fights T4K over individual backups.
+#
+# Tunables come from the hub ConfigMap "trilio-backup-configmap" (default ns) via
+# {{hub ... hub}} templating; the per-namespace values come from {{ ... }} templating
+# evaluated on the managed cluster. Label a namespace into scope with:
+#   oc label namespace <ns> trilio-backup=true
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: create-trilio-ns-backup
+  namespace: default
+  annotations:
+    policy.open-cluster-management.io/categories: CA Security Assessment and Authorization
+    policy.open-cluster-management.io/controls: CA-2 Security Assessments, CA-7 Continuous Monitoring
+    policy.open-cluster-management.io/description: Label-driven multi-namespace Trilio backups
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+spec:
+  disabled: false
+  remediationAction: enforce
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: trilio-label-driven-backups
+        spec:
+          remediationAction: enforce
+          severity: high
+          pruneObjectBehavior: DeleteIfCreated   # remove the CRs if the policy/label goes away
+          object-templates-raw: |
+            {{- range $ns := (lookup "v1" "Namespace" "" "").items }}
+            {{- if eq (index $ns.metadata.labels "trilio-backup") "true" }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: triliovault.trilio.io/v1
+                kind: Target
+                metadata:
+                  name: trilio-nfs-target
+                  namespace: '{{ $ns.metadata.name }}'
+                spec:
+                  type: NFS
+                  vendor: Other
+                  nfsCredentials:
+                    nfsExport: '{{hub fromConfigMap "" "trilio-backup-configmap" "nfsExport" hub}}'
+                  thresholdCapacity: '{{hub fromConfigMap "" "trilio-backup-configmap" "thresholdCapacity" hub}}'
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: triliovault.trilio.io/v1
+                kind: Policy
+                metadata:
+                  name: trilio-retention
+                  namespace: '{{ $ns.metadata.name }}'
+                spec:
+                  type: Retention
+                  default: false
+                  retentionConfig:
+                    latest: {{hub fromConfigMap "" "trilio-backup-configmap" "retainLatest" hub}}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: triliovault.trilio.io/v1
+                kind: Policy
+                metadata:
+                  name: trilio-schedule
+                  namespace: '{{ $ns.metadata.name }}'
+                spec:
+                  type: Schedule
+                  scheduleConfig:
+                    schedule:
+                      - '{{hub fromConfigMap "" "trilio-backup-configmap" "backupSchedule" hub}}'
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: triliovault.trilio.io/v1
+                kind: BackupPlan
+                metadata:
+                  name: '{{ $ns.metadata.name }}-backupplan'
+                  namespace: '{{ $ns.metadata.name }}'
+                spec:
+                  backupConfig:
+                    target:
+                      name: trilio-nfs-target
+                      namespace: '{{ $ns.metadata.name }}'
+                    retentionPolicy:
+                      name: trilio-retention
+                      namespace: '{{ $ns.metadata.name }}'
+                    schedulePolicy:
+                      fullBackupPolicy:
+                        name: trilio-schedule
+                        namespace: '{{ $ns.metadata.name }}'
+                  backupPlanFlags:
+                    skipImageBackup: true
+                  retainHelmApps: false
+            {{- end }}
+            {{- end }}
