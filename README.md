@@ -260,30 +260,40 @@ The Restore restores into the namespace where the CR lives.
 
 ---
 
-## 8. Troubleshooting (gotchas we actually hit)
+## 8. Troubleshooting
 
-| Symptom | Cause | Fix (already in this repo) |
+Issues you may hit in your own environment (these depend on your cluster/network/repo,
+not on this repo's manifests):
+
+| Symptom | Cause | What to do |
 |---|---|---|
-| An Argo child app is **Synced/Healthy but deployed nothing** | The `path` has nested subdirs and no root YAML; Argo read zero manifests | `directory: { recurse: true }` on the Application (`apps/t4k-policies.yaml`) |
-| Root app: `ComparisonError … authentication required: Repository not found` | Repo is private; Argo has no creds | Make the repo public, or add a repo credential to `openshift-gitops` |
-| ACM/Pipelines child stuck: `could not find … Make sure the CRD is installed` | Argo dry-runs a CR whose CRD the operator hasn't created yet | `argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true` on the CR (`MultiClusterHub`, sample `Pipeline`) |
-| T4K Subscription created but **no InstallPlan**, hangs silently | No **OperatorGroup** in `trilio-system` | `trilio-operator-group` ConfigurationPolicy (`spec: {}` = AllNamespaces) |
-| Subscription: `ResolutionFailed … no operators found in package k8s-triliovault` | The chosen catalog has no T4K bundle for this OCP (e.g. `certified-operators` on 4.22) | Use the custom-catalog profile (`values/ocp-4.22`), or confirm the right `channel`/`startingCSV` from `oc get packagemanifest` |
-| CatalogSource pod `ImagePullBackOff … manifest unknown` | Wrong image **tag** (the catalog index versions differently from the app) | Pick a real tag from `quay.io/triliovault/k8s-triliovault-catalog` and set it in `trilio-operator-configmap` |
-| TVM rejected: `deprecated fields logLevel or datamoverLogLevel are not allowed … use logConfig` | Newer T4K webhook dropped `logLevel` | Don't set `logLevel` in the `TrilioVaultManager` (use `logConfig` if you need to tune logging) |
-| Target stuck `InProgress` | NFS export unreachable/unwritable from the cluster | Check the export in `trilio-backup-configmap`; watch the `tvk-target-validation-*` pod in `trilio-system` |
+| Root app: `ComparisonError … authentication required: Repository not found` | Repo is private; Argo runs in-cluster with no creds | Make the repo public, or add a repository credential to `openshift-gitops` |
+| Subscription: `ResolutionFailed … no operators found in package k8s-triliovault` | The chosen catalog has no T4K bundle for this OCP (e.g. `certified-operators` on 4.22) | Use the right OCP profile (`values/ocp-4.22` for the custom catalog), and confirm `channel`/`startingCSV` from `oc get packagemanifest k8s-triliovault -n openshift-marketplace` |
+| CatalogSource pod `ImagePullBackOff … manifest unknown` | Wrong image **tag** (the catalog index versions differently from the app) | Pick a real tag from `quay.io/triliovault/k8s-triliovault-catalog` and set `catalogSourceImage` in `trilio-operator-configmap` |
+| `Target` stuck `InProgress` | NFS export unreachable/unwritable from the cluster | Check the export in `trilio-backup-configmap`; watch the `tvk-target-validation-*` pod in `trilio-system` |
 
----
+## 9. Design decisions (why the manifests look the way they do)
 
-## 9. Notes / verify before relying on it
+These are already handled in the repo — noted so the choices aren't a mystery, and so
+you don't "simplify" them back into breakage:
+
+- **`apps/t4k-policies.yaml` sets `directory: { recurse: true }`.** `components/t4k` is
+  nested (placement/, policies/); without recurse Argo reads zero manifests from the flat
+  root and falsely reports Synced/Healthy while deploying nothing.
+- **`install-trilio` creates an OperatorGroup in `trilio-system`.** Without one, OLM never
+  generates an InstallPlan and the Subscription hangs silently.
+- **`MultiClusterHub` and the sample `Pipeline` carry `SkipDryRunOnMissingResource=true`.**
+  Their CRDs don't exist until the operator installs (same sync), so Argo's up-front
+  dry-run would otherwise reject them.
+- **The `TrilioVaultManager` does not set `logLevel`.** Recent T4K webhooks reject the
+  deprecated `logLevel`/`datamoverLogLevel` fields (use `logConfig` if you must tune logs).
+
+## 10. Notes / verify before relying on it
 
 - **Operator channels** (`latest` for GitOps/Pipelines, `release-2.16` for ACM) — confirm
   for your OCP version; right after a GA some operators lag.
 - The 4.22 custom-catalog profile pins an **RC** build (no GA bundle for 4.22 yet).
   Switch that profile back to `certified-operators` once a 4.22-certified GA ships.
 - `cluster-admin` for the Argo controller is broad — scope it down in hardened environments.
-- CRD apiVersions verified against the k8s-triliovault source: `TrilioVaultManager`,
-  `License`, `Target`, `BackupPlan`, `Policy`, `Backup`, `Restore` at
-  `triliovault.trilio.io/v1`.
 - Official Trilio references: OCP install and ACM-policy deployment guides on
   `docs.trilio.io/kubernetes`.
