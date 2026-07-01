@@ -11,6 +11,11 @@ spec:
     repoURL: https://github.com/trilio-demo/acmgitops.git
     targetRevision: main
     path: components/t4k
+    # components/t4k is nested (placement/, policies/, configmaps/); without
+    # recurse Argo reads zero manifests from the flat root and reports a false
+    # "Synced/Healthy". .yaml.example files are ignored, so only the real
+    # placement + policy manifests get applied.
+    directory: { recurse: true }
   destination:
     server: https://kubernetes.default.svc
     namespace: default
