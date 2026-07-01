@@ -15,6 +15,31 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
+          name: trilio-catalog-source
+        spec:
+          # OCP 4.22 stopgap: the Trilio operator has no bundle in Red Hat's
+          # certified-operators catalog for 4.22, so we serve it from Trilio's
+          # own grpc index. When a 4.22-certified bundle ships, drop this
+          # template and set the Subscription back to source: certified-operators.
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: operators.coreos.com/v1alpha1
+                kind: CatalogSource
+                metadata:
+                  name: k8s-triliovault-manifest
+                  namespace: openshift-marketplace
+                spec:
+                  sourceType: grpc
+                  image: quay.io/triliovault/k8s-triliovault-catalog:5.3.1-rc.3
+                  displayName: Trilio T4K (custom)
+                  publisher: Trilio
+          remediationAction: enforce
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
           name: check-ns-trilio-system
         spec:
           object-templates:
@@ -63,9 +88,9 @@ spec:
                 spec:
                   name: k8s-triliovault
                   channel: 5.3.x
-                  startingCSV: k8s-triliovault-stable.5.3.1
+                  startingCSV: k8s-triliovault-stable.5.3.1-rc.3
                   installPlanApproval: Automatic
-                  source: certified-operators
+                  source: k8s-triliovault-manifest
                   sourceNamespace: openshift-marketplace
           remediationAction: enforce
           severity: high
