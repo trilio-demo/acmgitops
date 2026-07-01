@@ -16,9 +16,11 @@ data:
   catalogSource: 'certified-operators'
   # Empty ⇒ the policy does NOT create a custom CatalogSource (OperatorHub only).
   catalogSourceImage: ''
-  # Confirm against the cluster (see header). '5.3.x' is the current GA line.
-  channel: '5.3.x'
+  # Per Trilio's compatibility matrix, the latest release formally supported on
+  # OCP 4.20 is the 5.2.x line (5.3.x is not yet listed for any OCP version).
+  # Confirm the exact channel against the cluster (see header).
+  channel: '5.2.x'
   # The certified CSV for the channel head = "latest supported version".
   # Read it from the packagemanifest above and paste it here, e.g.:
-  #   k8s-triliovault-stable.5.3.1
-  startingCSV: 'k8s-triliovault-stable.5.3.1'
+  #   k8s-triliovault-stable.5.2.1
+  startingCSV: 'k8s-triliovault-stable.5.2.1'
