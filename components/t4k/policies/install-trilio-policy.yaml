@@ -123,7 +123,6 @@ spec:
                       watcher: 30s
                       webSessionAccessTTL: 160h
                       webSessionMaxInactivityTTL: 24
-                  logLevel: Info
                   metadataJobResources:
                     requests:
                       cpu: 10m
