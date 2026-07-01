@@ -9,10 +9,6 @@ From there Argo CD installs OpenShift Pipelines, ACM, and a set of ACM Governanc
 Policies that install T4K and run namespace backups across every managed cluster you
 label — all from the hub. `dc11` ships as a worked example (`values/dc11/`).
 
-> Scope: this repo is **only** GitOps + ACM + T4K. It deliberately does NOT carry a
-> cluster's full platform operator set (CNV, RHOAI, logging, …) — that belongs to each
-> cluster's own config.
-
 ---
 
 ## 1. How the pieces fit
