@@ -30,6 +30,26 @@ spec:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
         metadata:
+          name: trilio-operator-group
+        spec:
+          # Without an OperatorGroup in trilio-system, OLM never generates an
+          # InstallPlan and the Subscription hangs. spec:{} = AllNamespaces,
+          # matching the cluster-scoped TrilioVaultManager (applicationScope: Cluster).
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: operators.coreos.com/v1
+                kind: OperatorGroup
+                metadata:
+                  name: trilio-system-og
+                  namespace: trilio-system
+                spec: {}
+          remediationAction: enforce
+          severity: high
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
           name: trilio-operator-subscription
         spec:
           object-templates:
