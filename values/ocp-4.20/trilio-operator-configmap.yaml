@@ -1,0 +1,24 @@
+# OCP 4.20 profile — T4K operator source for the install-trilio policy.
+# 4.20 is a well-supported OCP release: the Trilio CERTIFIED operator is in
+# OperatorHub, so no custom CatalogSource is needed. Apply on the ACM hub (default ns).
+#
+# CONFIRM channel + CSV against the target cluster's certified catalog:
+#   oc get packagemanifest k8s-triliovault -n openshift-marketplace \
+#     -o jsonpath='{.status.defaultChannel}{"\n"}{range .status.channels[*]}{.name}={.currentCSV}{"\n"}{end}'
+# Put the defaultChannel in `channel` and the matching currentCSV in `startingCSV`.
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: trilio-operator-configmap
+  namespace: default
+data:
+  # Stock Red Hat certified catalog — the OperatorHub path.
+  catalogSource: 'certified-operators'
+  # Empty ⇒ the policy does NOT create a custom CatalogSource (OperatorHub only).
+  catalogSourceImage: ''
+  # Confirm against the cluster (see header). '5.3.x' is the current GA line.
+  channel: '5.3.x'
+  # The certified CSV for the channel head = "latest supported version".
+  # Read it from the packagemanifest above and paste it here, e.g.:
+  #   k8s-triliovault-stable.5.3.1
+  startingCSV: 'k8s-triliovault-stable.5.3.1'

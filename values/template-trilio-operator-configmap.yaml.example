@@ -1,0 +1,22 @@
+# TEMPLATE — copy to values/<profile>/trilio-operator-configmap.yaml and edit.
+# Drives WHERE the install-trilio policy pulls the T4K operator from. Two modes:
+#
+#   Certified (OperatorHub)  — supported OCP versions. certified-operators,
+#                              catalogSourceImage empty (no custom catalog created).
+#   Custom grpc catalog      — OCP versions with no certified bundle yet (e.g. 4.22).
+#                              catalogSource = your CatalogSource name,
+#                              catalogSourceImage = quay grpc index tag.
+#
+# Confirm channel + CSV from the target cluster:
+#   oc get packagemanifest k8s-triliovault -n openshift-marketplace \
+#     -o jsonpath='{.status.defaultChannel}{"\n"}{range .status.channels[*]}{.name}={.currentCSV}{"\n"}{end}'
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: trilio-operator-configmap
+  namespace: default
+data:
+  catalogSource: 'certified-operators'
+  catalogSourceImage: ''
+  channel: 'REPLACE_WITH_CHANNEL'
+  startingCSV: 'REPLACE_WITH_CSV'

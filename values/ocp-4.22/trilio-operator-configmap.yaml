@@ -1,0 +1,20 @@
+# OCP 4.22 profile — T4K operator source for the install-trilio policy.
+# 4.22 is newer than the current certified bundle: certified-operators has NO
+# k8s-triliovault for 4.22 (only tvo-operator/T4O). Stopgap = Trilio's own grpc
+# catalog index, which ships RC builds. Apply on the ACM hub (default ns).
+#
+# When a 4.22-certified GA bundle ships, switch this profile to the ocp-4.20
+# style (catalogSource: certified-operators, catalogSourceImage: '').
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: trilio-operator-configmap
+  namespace: default
+data:
+  # Name of the CatalogSource the policy creates in openshift-marketplace.
+  catalogSource: 'k8s-triliovault-manifest'
+  # Non-empty ⇒ the policy creates this grpc CatalogSource on the managed cluster.
+  # Tags: quay.io/triliovault/k8s-triliovault-catalog (RC builds only).
+  catalogSourceImage: 'quay.io/triliovault/k8s-triliovault-catalog:5.3.1-rc.3'
+  channel: '5.3.x'
+  startingCSV: 'k8s-triliovault-stable.5.3.1-rc.3'

@@ -17,25 +17,31 @@ spec:
         metadata:
           name: trilio-catalog-source
         spec:
-          # OCP 4.22 stopgap: the Trilio operator has no bundle in Red Hat's
-          # certified-operators catalog for 4.22, so we serve it from Trilio's
-          # own grpc index. When a 4.22-certified bundle ships, drop this
-          # template and set the Subscription back to source: certified-operators.
-          object-templates:
+          remediationAction: enforce
+          severity: high
+          # Version-driven: create a custom grpc CatalogSource ONLY when the hub
+          # ConfigMap trilio-operator-configmap has a non-empty catalogSourceImage
+          # (custom-catalog profiles, e.g. values/ocp-4.22). Certified profiles
+          # (values/ocp-4.20) leave it empty ⇒ no CatalogSource, install comes
+          # straight from OperatorHub/certified-operators.
+          # Hub templating ({{hub ... hub}}) resolves on the hub first; the
+          # {{- if }} then runs on the managed cluster over the resolved value.
+          object-templates-raw: |
+            {{- $img := "{{hub fromConfigMap "" "trilio-operator-configmap" "catalogSourceImage" hub}}" }}
+            {{- if $img }}
             - complianceType: musthave
               objectDefinition:
                 apiVersion: operators.coreos.com/v1alpha1
                 kind: CatalogSource
                 metadata:
-                  name: k8s-triliovault-manifest
+                  name: '{{hub fromConfigMap "" "trilio-operator-configmap" "catalogSource" hub}}'
                   namespace: openshift-marketplace
                 spec:
                   sourceType: grpc
-                  image: quay.io/triliovault/k8s-triliovault-catalog:5.3.1-rc.3
+                  image: {{ $img | quote }}
                   displayName: Trilio T4K (custom)
                   publisher: Trilio
-          remediationAction: enforce
-          severity: high
+            {{- end }}
     - objectDefinition:
         apiVersion: policy.open-cluster-management.io/v1
         kind: ConfigurationPolicy
@@ -87,10 +93,12 @@ spec:
                   namespace: trilio-system
                 spec:
                   name: k8s-triliovault
-                  channel: 5.3.x
-                  startingCSV: k8s-triliovault-stable.5.3.1-rc.3
+                  # All three read from the hub ConfigMap trilio-operator-configmap,
+                  # supplied per OCP profile under values/ocp-<ver>/.
+                  channel: '{{hub fromConfigMap "" "trilio-operator-configmap" "channel" hub}}'
+                  startingCSV: '{{hub fromConfigMap "" "trilio-operator-configmap" "startingCSV" hub}}'
                   installPlanApproval: Automatic
-                  source: k8s-triliovault-manifest
+                  source: '{{hub fromConfigMap "" "trilio-operator-configmap" "catalogSource" hub}}'
                   sourceNamespace: openshift-marketplace
           remediationAction: enforce
           severity: high
