@@ -15,6 +15,9 @@ data:
   catalogSource: 'k8s-triliovault-manifest'
   # Non-empty ⇒ the policy creates this grpc CatalogSource on the managed cluster.
   # Tags: quay.io/triliovault/k8s-triliovault-catalog (RC builds only).
-  catalogSourceImage: 'quay.io/triliovault/k8s-triliovault-catalog:5.3.1-rc.3'
-  channel: '5.3.x'
-  startingCSV: 'k8s-triliovault-stable.5.3.1-rc.3'
+  catalogSourceImage: 'quay.io/triliovault/k8s-triliovault-catalog:5.4.0-rc.1'
+  # NOTE: the 5.4.0 catalog index publishes on channel 'stable' (the 5.3.x line
+  # used channel '5.3.x'). Always confirm per tag with a probe CatalogSource +
+  # `oc get packagemanifest k8s-triliovault` — the channel name is not stable across lines.
+  channel: 'stable'
+  startingCSV: 'k8s-triliovault-stable.5.4.0-rc.1'
