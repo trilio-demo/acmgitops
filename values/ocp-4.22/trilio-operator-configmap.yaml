@@ -1,23 +1,25 @@
 # OCP 4.22 profile — T4K operator source for the install-trilio policy.
-# 4.22 is newer than the current certified bundle: certified-operators has NO
-# k8s-triliovault for 4.22 (only tvo-operator/T4O). Stopgap = Trilio's own grpc
-# catalog index, which ships RC builds. Apply on the ACM hub (default ns).
+# Since T4K 5.4.0 GA (2026-08-17) certified-operators ships k8s-triliovault for
+# OCP 4.22 (channel 5.4.x), so no custom CatalogSource is needed any more.
+# (Until then this profile used Trilio's RC grpc index quay.io/triliovault/k8s-triliovault-catalog.)
+# Apply on the ACM hub (default ns).
 #
-# When a 4.22-certified GA bundle ships, switch this profile to the ocp-4.20
-# style (catalogSource: certified-operators, catalogSourceImage: '').
+# CONFIRM channel + CSV against the target cluster's certified catalog:
+#   oc get packagemanifest k8s-triliovault -n openshift-marketplace \
+#     -o jsonpath='{range .status.channels[*]}{.name}={.currentCSV}{"\n"}{end}'
+# Verified on dc11 (OCP 4.22.1) 2026-10-05: 5.4.x=k8s-triliovault-stable.5.4.0
+#
+# Switching an existing cluster from the RC catalog: after applying this, delete the
+# orphan CatalogSource k8s-triliovault-manifest (musthave does not prune it).
 kind: ConfigMap
 apiVersion: v1
 metadata:
   name: trilio-operator-configmap
   namespace: default
 data:
-  # Name of the CatalogSource the policy creates in openshift-marketplace.
-  catalogSource: 'k8s-triliovault-manifest'
-  # Non-empty ⇒ the policy creates this grpc CatalogSource on the managed cluster.
-  # Tags: quay.io/triliovault/k8s-triliovault-catalog (RC builds only).
-  catalogSourceImage: 'quay.io/triliovault/k8s-triliovault-catalog:5.4.0-rc.1'
-  # NOTE: the 5.4.0 catalog index publishes on channel 'stable' (the 5.3.x line
-  # used channel '5.3.x'). Always confirm per tag with a probe CatalogSource +
-  # `oc get packagemanifest k8s-triliovault` — the channel name is not stable across lines.
-  channel: 'stable'
-  startingCSV: 'k8s-triliovault-stable.5.4.0-rc.1'
+  # Stock Red Hat certified catalog — the OperatorHub path.
+  catalogSource: 'certified-operators'
+  # Empty ⇒ the policy does NOT create a custom CatalogSource (OperatorHub only).
+  catalogSourceImage: ''
+  channel: '5.4.x'
+  startingCSV: 'k8s-triliovault-stable.5.4.0'

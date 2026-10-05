@@ -125,6 +125,11 @@ spec:
                     requests:
                       cpu: 100m
                       memory: 800Mi
+                  # Workaround for the 5.4.0 operator panic on OpenShift when
+                  # spec.ingressConfig is absent (DetectIngressOrGatewayAPIEnabled,
+                  # TK-12730, regression of TK-4843). Remove once fixed upstream.
+                  ingressConfig:
+                    ingressEnabled: true
                   helmValues:
                     pollingIntervals:
                       manager: 30s

@@ -73,7 +73,7 @@ components/
     configmaps/ # *.example only (real values live under values/, gitignored)
 values/
   ocp-4.20/   # OCP profile: certified operator via OperatorHub
-  ocp-4.22/   # OCP profile: custom grpc catalog (no certified bundle yet)
+  ocp-4.22/   # OCP profile: certified-operators, 5.4.x (custom RC catalog until 5.4.0 GA)
   dc11/       # environment values (NFS export, schedule, retention)
   template-*.example
 ```
@@ -127,12 +127,12 @@ so wave-0 installs the operator, OLM lands the CRD, and the CR applies on retry.
 Where the T4K **operator** comes from depends on your OpenShift version, because Red
 Hat's `certified-operators` catalog is **per-OCP-version**:
 
-| | **OCP 4.20** (and any version with a certified bundle) | **OCP 4.22** (newer than the certified bundle) |
+| | **OCP 4.20** | **OCP 4.22** |
 |---|---|---|
-| Operator source | `certified-operators` (OperatorHub) | Trilio's own **grpc CatalogSource** (`quay.io/triliovault/k8s-triliovault-catalog`, RC builds) |
-| Custom CatalogSource created? | **No** | **Yes** (by the policy) |
+| Operator source | `certified-operators` (OperatorHub) | `certified-operators` (OperatorHub), since T4K 5.4.0 GA. Before that: Trilio's own grpc CatalogSource with RC builds |
+| Custom CatalogSource created? | **No** | **No** (set `catalogSourceImage` only for RC/pre-GA testing) |
 | Values file | `values/ocp-4.20/trilio-operator-configmap.yaml` | `values/ocp-4.22/trilio-operator-configmap.yaml` |
-| Version you get | latest **GA** for 4.20 — the **5.2.x** line per Trilio's [compatibility matrix](https://docs.trilio.io/kubernetes/overview/compatibility-matrix) | latest **RC** on the grpc index (4.22 is not in the matrix yet) |
+| Version you get | latest **GA** for 4.20 — the **5.2.x** line per Trilio's [compatibility matrix](https://docs.trilio.io/kubernetes/overview/compatibility-matrix) | **5.4.x** GA (`k8s-triliovault-stable.5.4.0`, verified on dc11 2026-10-05) |
 
 The `install-trilio` policy is **parameterized** — it reads `catalogSource`,
 `catalogSourceImage`, `channel`, and `startingCSV` from a hub ConfigMap
@@ -292,8 +292,11 @@ you don't "simplify" them back into breakage:
 
 - **Operator channels** (`latest` for GitOps/Pipelines, `release-2.16` for ACM) — confirm
   for your OCP version; right after a GA some operators lag.
-- The 4.22 custom-catalog profile pins an **RC** build (no GA bundle for 4.22 yet).
-  Switch that profile back to `certified-operators` once a 4.22-certified GA ships.
+- The 4.22 profile moved from the custom RC catalog to `certified-operators` 5.4.x on
+  2026-10-05. When switching an existing cluster, delete the orphan CatalogSource
+  `k8s-triliovault-manifest` by hand (`musthave` does not prune it).
+- T4K 5.4.0 operator panics on OpenShift if the TVM has no `spec.ingressConfig`; the TVM
+  template sets `ingressConfig.ingressEnabled: true` as a workaround (TK-12730, regression of TK-4843).
 - `cluster-admin` for the Argo controller is broad — scope it down in hardened environments.
 - Official Trilio references: OCP install and ACM-policy deployment guides on
   `docs.trilio.io/kubernetes`.
